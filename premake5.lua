@@ -1,172 +1,102 @@
-workspace "Engine"
-    architecture "x86_64"
-    
-    configurations
-    {
-        "Debug",
-        "Release",
-        "Dist"
-    }
+project "GLFW"
+	kind "StaticLib"
+	language "C"
 
-outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
-engine_prj_name = "Engine"
-sandbox_prj_name = "Sandbox"
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
--- Include directories relative to the root folder
-IncludeDir = {}
-IncludeDir["GLFW"] = engine_prj_name .. "/vendor/GLFW/include"
+	files
+	{
+		"include/GLFW/glfw3.h",
+		"include/GLFW/glfw3native.h",
+		"src/glfw_config.h",
+		"src/context.c",
+		"src/init.c",
+		"src/input.c",
+		"src/monitor.c",
+		"src/vulkan.c",
+		"src/window.c"
+	}
 
-project "Sandbox"
-    location "Sandbox"
-    kind "ConsoleApp"
-    language "C++"
-    cppdialect "C++17"
-
-    targetdir ("bin/" .. outputdir .. "/" .. sandbox_prj_name)
-    objdir ("bin-int/" .. outputdir .. "/" .. sandbox_prj_name)
-
-    files
-    {
-        "%{prj.name}/**.h",
-        "%{prj.name}/**.hpp",
-        "%{prj.name}/**.cpp"
-    }
-    
-    includedirs
-    {
-        "Engine/src",
-        "%{wks.location}/Engine/vendor",
-    }
-
-    sysincludedirs
-    {
-        "Engine/vendor/spdlog/include"
-    }
-
-    links { "Engine" }
-
-    filter "system:Windows"
-        cppdialect "C++17"
-        staticruntime "On"
-        systemversion "latest"
-        
-        defines {"GE_PLATFORM_WINDOWS"}
-
-        libdirs { "%{prj.name}/vendor/GLFW/lib-vc2019" }
-    
     filter "system:macosx"
-        cppdialect "C++17"
-        staticruntime "On"
-        
-        defines "GE_PLATFORM_MACOS"
-        
-        links { "fmt" }
-        libdirs { "/opt/homebrew/lib" }
-        
-    filter "configurations:Debug"
-        defines ("GE_DEBUG", "GE_ENABLE_ASSERTS")
-        symbols "On"
-    
-    filter "configurations:Release"
-        defines "GE_RELEASE"
-        optimize "On"
+		pic "On"
+		staticruntime "On"
 
-    filter "configurations:Dist"
-        defines "GE_DIST"
-        symbols "On"
+		files
+		{
+			"src/cocoa_platform.h",
+            "src/cocoa_joystick.h",
+            "src/posix_thread.h",
+            "src/nsgl_context.h",
+            "src/egl_context.h",
+            "src/osmesa_context.h",
+            "src/cocoa_init.m",
+            "src/cocoa_joystick.m",
+            "src/cocoa_monitor.m",
+            "src/cocoa_window.m",
+            "src/cocoa_time.c",
+            "src/posix_thread.c",
+            "src/nsgl_context.m",
+            "src/egl_context.c",
+            "src/osmesa_context.c"
+		}
 
-project "Engine"
-    location "Engine"
-    kind "SharedLib"
-    language "C++"
-    cppdialect "C++17"
-    staticruntime "off"
-    
-    targetdir ("bin/" .. outputdir .. "/" .. engine_prj_name)
-    objdir ("bin-int/" .. outputdir .. "/" .. engine_prj_name)
+		defines 
+		{ 
+			"_GLFW_COCOA"
+		}
 
-    pchheader ("src/gepch.hpp")
-    pchsource (engine_prj_name .. "/src/gepch.cpp")
-    
-    files
-    {
-        "%{prj.name}/**.h",
-        "%{prj.name}/**.hpp",
-        "%{prj.name}/**.cpp"
-    }
 
-    removefiles 
-    {
-        "%{prj.name}/vendor/**"
-    }
+	filter "system:linux"
+		pic "On"
 
-    includedirs
-    {
-        "%{prj.name}/src"
-    }
-    
-    sysincludedirs
-    {
-        "%{prj.name}/vendor/spdlog/include",
-        "%{IncludeDir.GLFW}"
-    }
+		systemversion "latest"
+		
+		files
+		{
+			"src/x11_init.c",
+			"src/x11_monitor.c",
+			"src/x11_window.c",
+			"src/xkb_unicode.c",
+			"src/posix_time.c",
+			"src/posix_thread.c",
+			"src/glx_context.c",
+			"src/egl_context.c",
+			"src/osmesa_context.c",
+			"src/linux_joystick.c"
+		}
 
-    links {""}
+		defines
+		{
+			"_GLFW_X11"
+		}
 
-    flags { "NoPCH" }
+	filter "system:windows"
+		systemversion "latest"
 
-    defines 
-    {
-        "_CRT_SECURE_NO_WARNINGS",
-		"GLFW_INCLUDE_NONE"
-    }
-    
-    filter "system:Windows"
-        buildoptions { "-std=c11", "-lgdi32" }
-        cppdialect "C++17"
-        staticruntime "On"
-        systemversion "latest"
-        
-        defines
-        {
-            "GE_PLATFORM_WINDOWS",
-            "GE_BUILD_DLL"
-        }
+		files
+		{
+			"src/win32_init.c",
+			"src/win32_joystick.c",
+			"src/win32_monitor.c",
+			"src/win32_time.c",
+			"src/win32_thread.c",
+			"src/win32_window.c",
+			"src/wgl_context.c",
+			"src/egl_context.c",
+			"src/osmesa_context.c"
+		}
 
-        links 
-        {
-            "opengl32.lib"
-        }
-        
-        postbuildcommands
-        {
-            ("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/" .. sandbox_prj_name)
-        }
-    
-    filter "system:macosx"
-        cppdialect "C++17"
-        staticruntime "On"
-        
-        defines "GE_PLATFORM_MACOS"
-        
-        postbuildcommands
-        {
-            ("{COPY} %{cfg.buildtarget.relpath} ../bin/"..outputdir.."/"..sandbox_prj_name)
-        }
-        
-        links {"Cocoa.framework", "OpenGL.framework", "IOKit.framework", "CoreFoundation.framework"}
-        
-    filter "configurations:Debug"
-        defines ("GE_DEBUG", "GE_ENABLE_ASSERTS")
-        buildoptions "/MTd"
-        symbols "On"
-    
-    filter "configurations:Release"
-        defines "GE_RELEASE"
-        buildoptions "/MTd"
-        optimize "On"
+		defines 
+		{ 
+			"_GLFW_WIN32",
+			"_CRT_SECURE_NO_WARNINGS"
+		}
 
-    filter "configurations:Dist"
-        defines "GE_DIST"
-        buildoptions "/MTd"
-        symbols "On"
+	filter "configurations:Debug"
+		runtime "Debug"
+		symbols "on"
+
+	filter "configurations:Release"
+		runtime "Release"
+		optimize "on"
