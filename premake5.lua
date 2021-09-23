@@ -41,7 +41,8 @@ project "GLFW"
 
 		defines 
 		{ 
-			"_GLFW_COCOA"
+			"_GLFW_COCOA",
+			"_CRT_SECURE_NO_WARNINGS"
 		}
 
 
